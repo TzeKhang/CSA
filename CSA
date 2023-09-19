@@ -4,14 +4,14 @@ TITLE GSC TICKETING SYSTEM
 .STACK 64
 .DATA
 
-LOGO1 DB 10,13,"  GGGG     SSSS    CCCC $"
+LOGO1 DB 10,13,"  GGGG     SSSS    CCCC $"			;LOGO
 LOGO2 DB 10,13," G    G   S       C    C$"
 LOGO3 DB 10,13," G        S       C     $"
 LOGO4 DB 10,13," G   GG    SSSS   C     $"
 LOGO5 DB 10,13," G    G        S  C    C$"
 LOGO6 DB 10,13,"  GGGG     SSSS    CCCC $"
 
-MSGLI1 DB 10,13,"WELCOME TO GSC CINEMA TICKETING SYSTEM $"
+MSGLI1 DB 10,13,"WELCOME TO GSC CINEMA TICKETING SYSTEM $"	;LOGIN
 MSGLI2 DB 10,13,"-----------------------------------------------------------------$"
 MSGLI3 DB 10,13,"ARE YOU AN EXISTING USER (Y=YES/N=NO) >$"
 MSGLI4 DB 10,13,"PLEASE ENTER YOUR USERNAME >$"
@@ -25,7 +25,27 @@ ERRORMSG DB 10,13,"INVALID INPUT, PLEASE TRY AGAIN"
 MSGLG1 DB 10,13,"HELLO WORLDO $"
 MSGLG2 DB 10,13,"WRONG PASSWORD, TRY AGAIN $"
 
-MSGMN1 DB 10,13,"WELCOME TO GSC MOVIE MENU $"
+MSGMN1 DB 10,13,"WELCOME TO GSC MOVIE MENU $"			;MENU
+MSGMN2 DB 10,13,"~~~~~NOW SHOWING~~~~~ $"	
+MSGMN3 DB 10,13,"=============================================================== $"
+MSGMN4 DB 10,13,"WHICH MOVIE DO YOU WISH TO SELECT? (1/2/3/4/5): $"
+MSGMN5 DB 10,13,"DO YOU WISH TO SELECT $"
+MSGMN6 DB 10,13,"AS YOUR MOVIE? : $"
+
+
+MSGMNM1 DB 10,13,"1. RESIDENT EVIL 4 $"				;MOVIE SELECTION
+MSGMNM2 DB 10,13,"2. THE LEGO TRILOGY $"
+MSGMNM3 DB 10,13,"3. GENSHEEN IMPACT $"
+MSGMNM4 DB 10,13,"4. HONKAI STAR RAIL $"
+MSGMNM5 DB 10,13,"5. POKEMON GO $"
+CHOICEM DB ?							;USER CHOICE
+COUNTM1 DB 0							;COUNTER FOR MOVIE SELECTED
+COUNTM2 DB 0
+COUNTM3 DB 0
+COUNTM4 DB 0
+COUNTM5 DB 0
+
+
 
 STR_INPUT	LABEL	BYTE
 MAX		DB	50
@@ -45,9 +65,9 @@ SPACE3	DB	50 DUP(" ")
 
 
 STR_INPUT4	LABEL	BYTE
-MAX4	DB	50
+MAX4	DB	25
 ACTUAL4		DB	?
-SPACE4		DB	50 DUP(" ")
+SPACE4		DB	25 DUP(" ")
 
 ;---------------
 .CODE
@@ -57,7 +77,7 @@ MAIN PROC FAR
 MOV AX,@DATA
 MOV DS,AX
 
-MOV AH,09H				;LOGO
+MOV AH,09H						;LOGO
 LEA DX,LOGO1
 INT 21H
 
@@ -93,7 +113,7 @@ MOV AH,09H
 LEA DX,MSGLI2
 INT 21H
 
-CONF0:  MOV AH,09H				;ASK FOR IF USER IS MEMBER
+CONF0:  MOV AH,09H					;ASK IF USER IS MEMBER
         LEA DX,MSGLI3
         INT 21H
 
@@ -112,75 +132,82 @@ CONF0:  MOV AH,09H				;ASK FOR IF USER IS MEMBER
 
         JMP CONF0
 
-LOGIN:  MOV	AH , 09H
+LOGIN:  MOV	AH , 09H				;ENTER NAME
         LEA	DX , MSGLI4
         INT	21H
 
-            MOV	AH , 0AH
-	          LEA	DX , STR_INPUT3
-	          INT	21H
+        MOV 	AH , 0AH
+	LEA	DX , STR_INPUT3
+	INT	21H
 
-	          .386
-	          MOVZX	BX , ACTUAL3
-	          MOV	SPACE3[BX] , "$"
+	 .386
+	MOVZX	BX , ACTUAL3
+	MOV	SPACE3[BX] , "$"
 
-	          MOV	AH , 09H
-	          LEA	DX , SPACE3
-	          INT	21H    
-JMP AGAIN
+	MOV	AH , 09H
+	LEA	DX , SPACE3
+	INT	21H    
 
-AGAIN:        MOV	AH , 09H
+
+RETRY:  MOV	AH , 09H			;ENTER AND COMPARE PASSWORD
         LEA	DX , MSGLI5
         INT	21H
 
-            MOV	AH , 0AH
-	          LEA	DX , STR_INPUT4
-	          INT	21H
+        MOV	AH , 0AH
+	LEA	DX , STR_INPUT4
+	INT	21H
 
-	          .386
-	          MOVZX	BX , ACTUAL4
-	          MOV	SPACE4[BX] , "$"
+	.386
+	MOVZX	BX , ACTUAL4
+	MOV	SPACE4[BX] , "$"
 
-	          MOV	AH , 09H
-	          LEA	DX , SPACE4
-	          INT	21H
 
-            CMP	SPACE2 , SPACE4
-            JE	MENU
+    	MOV SI, SPACE2
+   	MOV DI, SPACE4
 
-            CMP	SPACE2 , SPACE4
-            MOV AH,09H       ; DOS function to print a string
-            MOV DX,OFFSET MSGLG2
-            INT 21H
-            JNE AGAIN
+	COMPPASS:
+    	LODSB           ; Load the next byte from SPACE2 into AL and increment SI
+    	LODSW           ; Load the next word from SPACE4 into AX and increment DI
+    	CMP AL, 0       
+    	JE PASSY ; If we have, the strings are equal
+   	CMP AL, AH      ; Compare characters from SPACE2 and SPACE4
+    	JNE PASSN
+    	JMP COMPPASS ; Repeat the loop
 
-CREATEACCN: MOV	AH , 09H
+PASSY:	JMP MENU
+
+PASSN:	MOV AH, 09H
+    	LEA DX, MSGLG2
+    	INT 21H
+    	JMP RETRY
+
+CREATEACCN:	MOV	AH , 09H				;CREATE USERNAME
           	LEA	DX , MSGLI4
-	          INT	21H
+	        INT	21H
 
-	          MOV	AH , 0AH
-	          LEA	DX , STR_INPUT
-	          INT	21H
+	        MOV	AH , 0AH
+	        LEA	DX , STR_INPUT
+	        INT	21H
 
-            MOV	AH , 09H
+            	MOV	AH , 09H
           	LEA	DX , MSGLI6
-	          INT	21H
+	        INT	21H
 
-	          .386
-	          MOVZX	BX , ACTUAL
-	          MOV	SPACE[BX] , "$"
+	         .386
+	        MOVZX	BX , ACTUAL
+	        MOV	SPACE[BX] , "$"
 
-	          MOV	AH , 09H
-	          LEA	DX , SPACE
-	          INT	21H
+	        MOV	AH , 09H
+	        LEA	DX , SPACE
+	        INT	21H
 
-            MOV AH,09H				
-            LEA DX,MSGLI7
-            INT 21H
+            	MOV AH,09H				
+            	LEA DX,MSGLI7
+            	INT 21H
 
-            JMP CONF1
+            	JMP CONF1
 
-CONF1:      MOV	AH , 01H
+CONF1:      MOV	AH , 01H				;CONFIRM NAME
             INT	21H
 
             CMP	AL , 'n'
@@ -195,7 +222,7 @@ CONF1:      MOV	AH , 01H
 
             JMP CONF1
 
-CREATEACCP:  MOV	AH , 09H
+CREATEACCP:  MOV	AH , 09H 			;CREATE PASSWORD
           	LEA	DX , MSGLI5
 	          INT	21H
 
@@ -215,7 +242,7 @@ CREATEACCP:  MOV	AH , 09H
             LEA DX,MSGLI8
             INT 21H
 
-CONF2:       MOV	AH , 01H
+CONF2:       MOV	AH , 01H			;CONFIRM PASSSWORD ENTERED
             INT	21H
 
             CMP	AL , 'n'
@@ -233,11 +260,44 @@ CONF2:       MOV	AH , 01H
 
             JMP CONF2
 
-MENU:    MOV	AH , 09H
+MENU:    MOV	AH , 09H				;MOVIE MENU
         LEA	DX , MSGMN1
-	      INT	21H
+	INT	21H
+
+	MOV AH,09H				
+	LEA DX,MSGMN2
+	INT 21H
+
+	MOV AH,09H				
+	LEA DX,MSGMN3
+	INT 21H
+
+	MOV AH,09H				
+	LEA DX,MSGMNM1
+	INT 21H
+
+	MOV AH,09H				
+	LEA DX,MSGMNM2
+	INT 21H
+
+	MOV AH,09H				
+	LEA DX,MSGMNM3
+	INT 21H
+
+	MOV AH,09H				
+	LEA DX,MSGMNM4
+	INT 21H
+
+	MOV AH,09H				
+	LEA DX,MSGMNM5
+	INT 21H
+
+	MOV AH,09H				
+	LEA DX,MSGMN4
+	INT 21H
 
 
+	
 MOV AX,4C00H
 INT 21H 
 
